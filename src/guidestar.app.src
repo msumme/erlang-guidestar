@@ -1,0 +1,12 @@
+{application, guidestar,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { guidestar_app, []}},
+  {env, []}
+ ]}.
