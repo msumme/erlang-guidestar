@@ -3,10 +3,9 @@
   {description, ""},
   {vsn, "1"},
   {registered, []},
-  {applications, [
-                  kernel,
-                  stdlib
-                 ]},
+  {applications, [ kernel,
+                   stdlib,
+                   hackney ]},
   {mod, { guidestar_app, []}},
   {env, []}
  ]}.
