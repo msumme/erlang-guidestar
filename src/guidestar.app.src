@@ -1,0 +1,11 @@
+{application, guidestar,
+ [
+  {description, "Erlang Library for Interacting with Guidestar APIs"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [ kernel,
+                   stdlib,
+                   hackney ]},
+  {mod, { guidestar_app, []}},
+  {env, []}
+ ]}.
