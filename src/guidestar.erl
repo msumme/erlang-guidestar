@@ -15,7 +15,6 @@ ensure_deps_started() ->
   true = lists:all(fun ensure_started/1, Deps).
 
 ensure_started(App) ->
-  io:format("~w~n", [App]),
   case application:start(App) of
     ok ->
       true;
@@ -27,7 +26,6 @@ ensure_started(App) ->
   end.
 
 advanced_search(Query, Auth) ->
-  % Headers = with_auth([], Auth),
   Request = #request{
     method = get,
     path = <<"advancedsearch">>,
@@ -59,11 +57,21 @@ fetch_remaining(Total, Count, Page, Request, Results) ->
 do_request(#request{method = Method, path = Path, params = Params, auth = Auth,
     headers = Headers, body = Body}) ->
   Url = url(Path, Params, Auth),
-  io:format("URL: ~s~n", [Url]),
   Options = [ {ssl_options, [{ versions, [sslv3] }]}],
-  {ok, _Status, _Headers, Client} = hackney:request(Method, Url, Headers, Body, Options),
-  {ok, ResBody} = hackney:body(Client),
-  {Result} = jiffy:decode(ResBody), Result.
+  {ok, Status, _Headers, Client} = hackney:request(Method, Url, Headers, Body, Options),
+  case Status of
+    Status when Status =:= 404 ->
+      throw(not_found);
+    Status when Status =:= 401 ->
+      throw(not_authorized);
+    Status when Status =:= 403 ->
+      throw(forbidden);
+    Status when Status =< 399 ->
+      {ok, ResBody} = hackney:body(Client),
+      {Result} = jiffy:decode(ResBody), Result;
+    Status when Status > 399 ->
+      error
+  end.
 
 url(Path, Params, Auth) ->
   iolist_to_binary(["https://", Auth, "@", ?SERVER, "/v", ?VERSION, "/", Path,
