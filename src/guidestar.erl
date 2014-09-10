@@ -2,10 +2,8 @@
 
 -export([start/0, advanced_search/2]).
 
--define(SERVER, "sandboxdata.guidestar.org").
--define(VERSION, "1").
-
--record(request, {method, path, params, auth, headers, body}).
+-record(guidestar, {server, version, key}).
+-record(request, {method, path, params, conn, headers, body}).
 
 start() ->
   [ensure_started(X) || X <- [crypto, public_key, asn1, ssl, idna, hackney]].
@@ -25,12 +23,12 @@ ensure_started(App) ->
       Else
   end.
 
-advanced_search(Query, Auth) ->
+advanced_search(Query, Conn) ->
   Request = #request{
     method = get,
     path = <<"advancedsearch">>,
     params = [{"q", edoc_lib:escape_uri(Query)}, {"r", "25"}],
-    auth = Auth,
+    conn = Conn,
     headers = [],
     body = <<>>
   },
@@ -54,9 +52,9 @@ fetch_remaining(Total, Count, Page, Request, Results) ->
   Results2 = Results ++ Results1,
   fetch_remaining(Total, length(Results2), Page + 1, Request1, Results2).
 
-do_request(#request{method = Method, path = Path, params = Params, auth = Auth,
+do_request(#request{method = Method, path = Path, params = Params, conn = Conn,
     headers = Headers, body = Body}) ->
-  Url = url(Path, Params, Auth),
+  Url = url(Path, Params, Conn),
   Options = [ {ssl_options, [{ versions, [sslv3] }]}],
   {ok, Status, _Headers, Client} = hackney:request(Method, Url, Headers, Body, Options),
   case Status of
@@ -73,8 +71,8 @@ do_request(#request{method = Method, path = Path, params = Params, auth = Auth,
       error
   end.
 
-url(Path, Params, Auth) ->
-  iolist_to_binary(["https://", Auth, "@", ?SERVER, "/v", ?VERSION, "/", Path,
+url(Path, Params, #guidestar{ server = S, version = V, key = K }) ->
+  iolist_to_binary(["https://", K, "@", S, "/v", V, "/", Path,
     "?", params_to_string(Params)]).
 
 params_to_string(Params) ->
